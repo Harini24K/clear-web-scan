@@ -25,6 +25,22 @@ const SHORT_URL_DOMAINS = [
   "buff.ly", "ow.ly", "rebrand.ly",
 ];
 
+// Deterministic domain age estimation based on hostname hash
+function estimateDomainAge(hostname: string): number {
+  const wellKnown = ["google.com","facebook.com","amazon.com","apple.com","microsoft.com",
+    "github.com","wikipedia.org","youtube.com","twitter.com","linkedin.com","netflix.com",
+    "reddit.com","stackoverflow.com","paypal.com","ebay.com","yahoo.com","bing.com"];
+  const h = hostname.replace(/^www\./, "");
+  if (wellKnown.some(d => h === d || h.endsWith("." + d))) return 5000;
+  // Hash-based deterministic age: short clean domains → older, long messy → newer
+  let hash = 0;
+  for (let i = 0; i < h.length; i++) hash = ((hash << 5) - hash + h.charCodeAt(i)) | 0;
+  const parts = h.split(".");
+  const penalty = Math.max(0, parts.length - 3) * 200 + Math.max(0, h.length - 20) * 30;
+  const base = Math.abs(hash % 3000) + 30;
+  return Math.max(30, base - penalty);
+}
+
 export function extractFeatures(url: string): URLFeatures {
   let parsed: URL;
   try {

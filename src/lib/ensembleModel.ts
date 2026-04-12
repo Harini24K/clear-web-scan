@@ -40,9 +40,9 @@ function rfPredict(features: number[]): number {
 function lrPredict(features: number[]): number {
   const { lr_coefficients, lr_intercept, lr_mean, lr_std } = TRAINED_MODEL;
   // Standardize features using training mean/std
-  let z = lr_intercept;
+  let z = lr_intercept as number;
   for (let i = 0; i < features.length; i++) {
-    const std = lr_std[i] === 0 ? 1 : lr_std[i];
+    const std = (lr_std[i] as number) === 0 ? 1 : (lr_std[i] as number);
     const normalized = (features[i] - lr_mean[i]) / std;
     z += lr_coefficients[i] * normalized;
   }
