@@ -47,7 +47,7 @@ export function extractFeatures(url: string): URLFeatures {
     ),
     subdomainCount: hostname.split(".").length - 2,
     pathDepth: parsed.pathname.split("/").filter(Boolean).length,
-    domainAge: Math.floor(Math.random() * 3650) + 30, // mock
+    domainAge: estimateDomainAge(hostname),
     hasAtSymbol: fullUrl.includes("@"),
     redirectCount: (fullUrl.match(/\/\//g) || []).length - 1,
     shortUrl: SHORT_URL_DOMAINS.some((d) => hostname.includes(d)),
