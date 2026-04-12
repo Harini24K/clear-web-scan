@@ -218,6 +218,24 @@ const Index = () => {
                         <ModelCard key={m.name} model={m} index={i} />
                       ))}
                     </div>
+                    {result.accuracy && (
+                      <div className="glass rounded-lg p-3 mt-3">
+                        <p className="text-xs font-semibold text-muted-foreground mb-2">Training Accuracy</p>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          {[
+                            { name: "RF", acc: result.accuracy.rf },
+                            { name: "LR", acc: result.accuracy.lr },
+                            { name: "XGB", acc: result.accuracy.xgb },
+                          ].map(({ name, acc }) => (
+                            <div key={name} className="text-xs">
+                              <span className="text-foreground font-bold">{acc}%</span>
+                              <br />
+                              <span className="text-muted-foreground">{name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <HistoryPanel entries={history} />
