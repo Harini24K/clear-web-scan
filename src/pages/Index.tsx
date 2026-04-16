@@ -5,6 +5,7 @@ import {
   Activity, Brain, Layers, Sparkles, Globe, TrendingUp,
   Link2, FileText, Lock,
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { extractFeatures, featureToRiskFactors } from "@/lib/featureExtraction";
 import { predict, type EnsembleResult } from "@/lib/ensembleModel";
 import { analyzeWebsite, type WebsiteAnalysisResult } from "@/lib/websiteAnalysis";
@@ -92,9 +93,12 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Advanced Website Trust Analysis</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Activity className="w-3 h-3 text-safe animate-pulse-glow" />
-            <span>7 Analysis Modules Active</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Activity className="w-3 h-3 text-safe animate-pulse-glow" />
+              <span>7 Modules Active</span>
+            </div>
+            <ThemeToggle />
           </div>
         </div>
       </header>
