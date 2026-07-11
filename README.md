@@ -341,4 +341,4 @@ If an interviewer asks *"show me exactly where the Random Forest weights and dec
 - **Layer 1 (always ready):** the 60-second script in §16.1.
 - **Layer 2 (on cross-question):** flow (§4), hero pseudocode (§16.3), file locations (§16.4), STAR challenge (§10), limitation (§12), improvements (§13).
 
-Never memorize only the script. Memorize the **logic behind each sentence** — the interviewer can drill deeper into any word you say.
+Never memorize only the script. Memorize the **logic behind each sentence** — the interviewer can drill deeper into any word you say. 
