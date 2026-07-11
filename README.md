@@ -213,3 +213,132 @@ npm run dev   # http://localhost:8080
 ```
 
 No env vars, no backend, no database required.
+
+---
+
+## 16. Interview Speaking Kit (memorize this section)
+
+Study in **two layers**: a 1-minute spoken version, and deeper backup answers for cross-questions. Do NOT memorize the whole README word-for-word — memorize the *logic* behind each sentence.
+
+### 16.1 The 60-Second Script (say this out loud until it flows)
+
+> "PhishGuard AI is a web app that detects whether a URL is safe, suspicious, or phishing. It gives both a **Trust Score** and an **ML risk score**.
+>
+> I built it because most URL checkers only look at basic string patterns — they miss real phishing tricks and often wrongly flag legitimate sites.
+>
+> The stack is **React, TypeScript, Tailwind, and Framer Motion**. For prediction I used **client-side execution of trained model artifacts** instead of a backend.
+>
+> The flow: user enters a URL → I extract 12 URL features → run a 7-module trust analyzer → pass features into an ensemble model → show the verdict, trust bar, and analysis tabs.
+>
+> The hero feature is the **ensemble predictor** — Random Forest, Logistic Regression, and an XGBoost-style weighted scorer each vote, and I combine them with weights 0.35 / 0.25 / 0.40.
+>
+> The main challenge was needing real ML predictions without a backend. I solved it by training the models offline in Python, exporting the trees and coefficients as JSON, and writing a TypeScript runtime that executes them in the browser in under 5 ms.
+>
+> The biggest limitation is that domain age and traffic are estimated, not fetched live. If I extend it, I'd add a backend with WHOIS and Google Safe Browsing APIs, and persist history in a database."
+
+### 16.2 The 2-Minute Technical Version
+
+Add these details on top of the 60-second script:
+
+- **Feature extraction (12 features):** URL length, HTTPS, dot count, special-char count, IP-as-host, suspicious keywords, subdomain count, path depth, estimated domain age, `@` symbol, redirect count, short-URL detection.
+- **Trust analyzer (7 modules, 8 weighted factors):** Domain Age 20%, SSL 10%, TLD Reputation 8%, Traffic Rank 15%, Backlinks 12%, Search Indexing 10%, Content Signals 15% (brand mimicry regex, homoglyphs, suspicious paths), Reputation 10%. Verdict tiers: ≥70 safe, 40–69 suspicious, <40 phishing.
+- **Ensemble math:** `score = 0.35·RF + 0.25·LR + 0.40·XGB` → verdict = phishing if `score > 0.5`.
+- **Why weighted that way:** XGB got highest validation accuracy so highest weight; LR is linear so weighted lowest; RF sits in between.
+
+### 16.3 Hero Feature — Pseudocode to Recite from Memory
+
+```text
+function predict(features):
+    vec = featuresToVector(features)             # 12-dim numeric vector
+
+    # 1. Random Forest — traverse each exported tree, average the votes
+    rf  = mean(traverseTree(tree, vec) for tree in RF_TREES)
+
+    # 2. Logistic Regression — standardize + sigmoid
+    z   = intercept + Σ coef[i] * (vec[i] - mean[i]) / std[i]
+    lr  = 1 / (1 + exp(-z))
+
+    # 3. XGBoost surrogate — importance-weighted risk scoring
+    xgb = sigmoid(Σ importance[i] * risk_signal(feature[i]))
+
+    # 4. Weighted ensemble
+    score   = 0.35*rf + 0.25*lr + 0.40*xgb
+    verdict = "phishing" if score > 0.5 else "legitimate"
+    return { models, riskScore: score*100, verdict, explanation }
+```
+
+Tree traversal (6 lines — remember this shape):
+
+```text
+traverseTree(node, vec):
+    if node is leaf: return node.leaf                # 0 or 1
+    if vec[node.f] <= node.t: return traverseTree(node.l, vec)
+    else:                     return traverseTree(node.r, vec)
+```
+
+### 16.4 Where the Model Weights Actually Live (be exact)
+
+If an interviewer asks *"show me exactly where the Random Forest weights and decision tree arrays are stored, and how the ensemble voting runs":*
+
+- **File:** `src/lib/trainedModel.ts` — exports `TRAINED_MODEL` containing:
+  - `rf_trees` — array of Random Forest decision trees, each node is either `{ leaf: 0|1 }` or `{ f, t, l, r }` (feature index, threshold, left child, right child).
+  - `lr_coefficients`, `lr_intercept`, `lr_mean`, `lr_std` — Logistic Regression weights + standardization parameters.
+  - `feature_importances` — used by the XGBoost surrogate scorer.
+  - `rf_accuracy`, `lr_accuracy` — offline training accuracy.
+- **File:** `src/lib/ensembleModel.ts` — runtime:
+  - `traverseTree()` walks each exported tree recursively.
+  - `rfPredict()` averages leaf votes across all trees (majority vote).
+  - `lrPredict()` standardizes `(x - mean) / std`, dots with coefficients, applies sigmoid.
+  - `xgbPredict()` sums importance-weighted risk signals through a sigmoid.
+  - `predict()` combines: `0.35*rf + 0.25*lr + 0.40*xgb`, thresholds at 0.5.
+
+### 16.5 Defensive Answers — Say These Verbatim
+
+**Q: "This is a frontend app. Where is your backend and database?"**
+
+> "The current architecture is purposely built as a high-performance, client-side progressive web app. Instead of hosting a heavy Python backend to serve predictions, the ML models — including a 20-tree Random Forest and Logistic Regression — were trained **offline on 6,000 samples**. Their learned weights and tree paths were then compiled directly into deterministic TypeScript algorithms executing natively in the browser.
+>
+> For data persistence, it uses client-side state rather than a traditional cloud database. This keeps infrastructure costs at zero and network latency at near-zero. A major next-step limitation I've already identified is security — the model parameters are exposed to the client. If I were to scale this for production, my first step would be refactoring these modules into **cloud edge functions backed by a PostgreSQL database**."
+
+**Q: "Why an ensemble instead of one model?"**
+
+> "Each model has a different failure mode. RF overfits on rare tokens, LR is linear so misses feature interactions, and XGBoost captures nonlinear importance. Weighted voting reduces the variance of any single model being wrong, so the ensemble is more robust than any individual model."
+
+**Q: "Why React and TypeScript?"**
+
+> "React gives me a live-updating result panel with tabs and animations without page reloads. TypeScript gives me type-safe model I/O — the exported tree schema and LR weights are typed, so I catch shape mismatches at compile time instead of runtime."
+
+**Q: "How does Random Forest prediction work here specifically?"**
+
+> "Each tree is a JSON node of either `{leaf: 0|1}` or `{f, t, l, r}`. I recursively walk the tree: at each internal node I compare `vec[f]` to threshold `t`, go left if `≤`, right otherwise. When I hit a leaf I return its class. I do this for all trees and average — that's the majority vote."
+
+**Q: "How is the Trust Score different from the ML risk score?"**
+
+> "The Trust Score is a **heuristic, explainable per-factor** score (domain age, SSL, TLD, traffic, backlinks, indexing, content signals, reputation). The ML risk score is **learned from data**. They act as a cross-check — if both agree, confidence is high; if they disagree, the UI shows Suspicious rather than a hard verdict."
+
+**Q: "What if the input URL is invalid or empty?"**
+
+> "I wrap `new URL()` in a `try/catch`. If parsing fails I fall back to a safe default. If the user forgot the protocol I auto-prepend `https://`. LR standardization is guarded against `std = 0` to avoid NaN."
+
+**Q: "What challenge did you face while exporting the models?"**
+
+> "sklearn models can't run in the browser directly. Options were 'fake it' or ship a full ONNX runtime — too heavy. I designed a compact JSON schema for trees, wrote a 6-line recursive traverser, and exported LR as `(coef, intercept, mean, std)`. The tricky bugs were an off-by-one on leaf nodes and NaN from `std = 0` — both caught by writing a small validation script that compared browser predictions against the Python model on a holdout set."
+
+**Q: "What's the biggest limitation?"**
+
+> "No live network calls. WHOIS age, Tranco rank, and Google indexing are estimated from domain characteristics, not fetched. Model parameters are also exposed to the client."
+
+**Q: "What would you improve with 2 more weeks?"**
+
+> "1) A Flask/FastAPI backend with `/predict` calling real WHOIS + Safe Browsing APIs. 2) Replace the XGBoost surrogate with a proper ONNX-exported model. 3) Persist scan history and user-reported phishing in Postgres and retrain weekly — that's what makes the ensemble truly *adaptive*. 4) A browser extension to scan the current tab."
+
+**Q: "How would this scale to 10,000 users tomorrow?"**
+
+> "The frontend scales infinitely — static hosting plus client-side inference has no server bottleneck. The bottleneck appears only when I add the backend for real WHOIS/threat-intel, which needs response caching and rate-limit handling per upstream API."
+
+### 16.6 The Two-Layer Rule
+
+- **Layer 1 (always ready):** the 60-second script in §16.1.
+- **Layer 2 (on cross-question):** flow (§4), hero pseudocode (§16.3), file locations (§16.4), STAR challenge (§10), limitation (§12), improvements (§13).
+
+Never memorize only the script. Memorize the **logic behind each sentence** — the interviewer can drill deeper into any word you say.
